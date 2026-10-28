@@ -1,0 +1,6 @@
+.auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#eef3ef;border-radius:10px;padding:4px;margin-top:24px}
+.auth-switch button{border:0;border-radius:8px;padding:10px;background:transparent;color:var(--muted);font-weight:600}
+.auth-switch button.active{background:#fff;color:var(--green);box-shadow:0 2px 10px rgba(20,61,54,.08)}
+.register-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.register-grid .full-row{grid-column:1/-1}
+@media(max-width:520px){.register-grid{grid-template-columns:1fr}}
