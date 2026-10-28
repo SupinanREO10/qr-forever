@@ -3,9 +3,21 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 let pendingEmail = "", authMode = "register", logoImage = null;
 
+function ensureQrLibrary() {
+  if (window.QRCode) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
+    script.onload = () => window.QRCode ? resolve() : reject(new Error("โหลดระบบ QR ไม่สำเร็จ"));
+    script.onerror = () => reject(new Error("โหลดระบบ QR ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต"));
+    document.head.appendChild(script);
+  });
+}
+const qrReady = ensureQrLibrary();
+
 function makeQr(target, text, size = 260, dark = "#173d37", light = "#ffffff") {
   target.innerHTML = "";
-  return new QRCode(target, { text: text || "https://example.com", width: size, height: size, colorDark: dark, colorLight: light, correctLevel: QRCode.CorrectLevel.H });
+  return new window.QRCode(target, { text: text || "https://example.com", width: size, height: size, colorDark: dark, colorLight: light, correctLevel: window.QRCode.CorrectLevel.H });
 }
 function api(action, data = {}) {
   if (config.DEMO_MODE || !config.API_URL) return demoApi(action, data);
@@ -39,7 +51,10 @@ function drawLogo() {
   const ctx = canvas.getContext("2d"), ratio = Number($("#logoSize").value) / 100, width = canvas.width * ratio, x = (canvas.width - width) / 2, pad = width * .14;
   ctx.fillStyle = $("#lightColor").value; ctx.beginPath(); ctx.roundRect(x - pad, x - pad, width + pad * 2, width + pad * 2, pad * .7); ctx.fill(); ctx.drawImage(logoImage, x, x, width, width);
 }
-function refreshQr() { makeQr($("#qrOutput"), $("#qrText").value, 260, $("#darkColor").value, $("#lightColor").value); setTimeout(drawLogo, 40); }
+async function refreshQr() {
+  try { await qrReady; makeQr($("#qrOutput"), $("#qrText").value, 260, $("#darkColor").value, $("#lightColor").value); setTimeout(drawLogo, 40); }
+  catch (error) { $("#qrOutput").textContent = error.message; }
+}
 function openCreator() { $("#userEmail").textContent = localStorage.getItem("qrf_name") || localStorage.getItem("qrf_email") || pendingEmail; $("#creator").hidden = false; document.body.style.overflow = "hidden"; refreshQr(); }
 async function saveQr() {
   const status = $("#saveStatus"); showStatus(status, "กำลังบันทึก…");
@@ -47,7 +62,6 @@ async function saveQr() {
   catch (error) { showStatus(status, error.message, true); }
 }
 document.addEventListener("DOMContentLoaded", () => {
-  makeQr($("#heroQr"), location.origin, 210);
   $$('[data-open-auth]').forEach((button) => button.onclick = () => { if (localStorage.getItem("qrf_token")) return openCreator(); setAuthMode("register"); $("#authDialog").showModal(); });
   $("[data-close]").onclick = () => $("#authDialog").close(); $("#registerTab").onclick = () => setAuthMode("register"); $("#loginTab").onclick = () => setAuthMode("login");
   $("#emailForm").onsubmit = async (event) => {
@@ -67,5 +81,5 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#downloadPng").onclick = () => { drawLogo(); const anchor = document.createElement("a"); anchor.download = ($("#qrName").value.trim() || "qr-forever") + ".png"; anchor.href = $("#qrOutput canvas").toDataURL("image/png"); anchor.click(); };
   $("#saveQr").onclick = saveQr;
   $("#logout").onclick = () => { ["qrf_token", "qrf_email", "qrf_name"].forEach((key) => localStorage.removeItem(key)); $("#creator").hidden = true; document.body.style.overflow = ""; };
-  refreshQr();
+  qrReady.then(() => makeQr($("#heroQr"), location.origin, 210)).catch(() => { $("#heroQr").innerHTML = '<span class="qr-fallback">QR</span>'; });
 });
