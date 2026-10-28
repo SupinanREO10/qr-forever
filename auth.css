@@ -1,4 +1,5 @@
 .auth-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#eef3ef;border-radius:10px;padding:4px;margin-top:24px}
+[hidden]{display:none!important}
 .auth-switch button{border:0;border-radius:8px;padding:10px;background:transparent;color:var(--muted);font-weight:600}
 .auth-switch button.active{background:#fff;color:var(--green);box-shadow:0 2px 10px rgba(20,61,54,.08)}
 .register-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -8,6 +9,7 @@
 #emailForm,#otpForm{min-width:0}
 #emailForm>label,#otpForm>label{min-width:0}
 #emailForm input,#otpForm input{width:100%;min-width:0}
+#emailForm button,#otpForm button,.auth-switch button{cursor:pointer;user-select:none;touch-action:manipulation}
 dialog#authDialog{width:min(600px,calc(100% - 32px));max-width:600px;max-height:calc(100dvh - 32px);overflow-x:hidden;overscroll-behavior:contain}
 @media(max-height:720px) and (min-width:521px){
   dialog#authDialog{padding:22px 30px}
