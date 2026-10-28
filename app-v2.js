@@ -50,6 +50,8 @@ function drawLogo() {
   const canvas = $("#qrOutput canvas"); if (!canvas || !logoImage) return;
   const ctx = canvas.getContext("2d"), ratio = Number($("#logoSize").value) / 100, width = canvas.width * ratio, x = (canvas.width - width) / 2, pad = width * .14;
   ctx.fillStyle = $("#lightColor").value; ctx.beginPath(); ctx.roundRect(x - pad, x - pad, width + pad * 2, width + pad * 2, pad * .7); ctx.fill(); ctx.drawImage(logoImage, x, x, width, width);
+  const visibleImage = $("#qrOutput img");
+  if (visibleImage) visibleImage.src = canvas.toDataURL("image/png");
 }
 async function refreshQr() {
   try { await qrReady; makeQr($("#qrOutput"), $("#qrText").value, 260, $("#darkColor").value, $("#lightColor").value); setTimeout(drawLogo, 40); }
@@ -77,7 +79,15 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#changeEmail").onclick = () => { $("#otpForm").hidden = true; $("#emailForm").hidden = false; };
   ["#qrText", "#darkColor", "#lightColor"].forEach((selector) => $(selector).addEventListener("input", refreshQr));
   $("#logoSize").oninput = (event) => { $("#logoSizeLabel").textContent = event.target.value + "%"; refreshQr(); };
-  $("#logoInput").onchange = (event) => { const file = event.target.files[0]; if (!file) return; if (file.size > 2e6) return alert("ไฟล์ต้องไม่เกิน 2 MB"); const reader = new FileReader(); reader.onload = () => { logoImage = new Image(); logoImage.onload = refreshQr; logoImage.src = reader.result; }; reader.readAsDataURL(file); };
+  $("#logoInput").onchange = (event) => {
+    const file = event.target.files[0]; if (!file) return;
+    if (file.size > 2e6) { event.target.value = ""; return alert("ไฟล์ต้องไม่เกิน 2 MB"); }
+    const uploadButton = document.querySelector(".upload i");
+    uploadButton.textContent = file.name.length > 22 ? file.name.slice(0, 19) + "…" : file.name;
+    const reader = new FileReader();
+    reader.onload = () => { logoImage = new Image(); logoImage.onload = refreshQr; logoImage.onerror = () => alert("ไม่สามารถอ่านรูปนี้ได้ กรุณาใช้ PNG หรือ JPG"); logoImage.src = reader.result; };
+    reader.readAsDataURL(file);
+  };
   $("#downloadPng").onclick = () => { drawLogo(); const anchor = document.createElement("a"); anchor.download = ($("#qrName").value.trim() || "qr-forever") + ".png"; anchor.href = $("#qrOutput canvas").toDataURL("image/png"); anchor.click(); };
   $("#saveQr").onclick = saveQr;
   $("#logout").onclick = () => { ["qrf_token", "qrf_email", "qrf_name"].forEach((key) => localStorage.removeItem(key)); $("#creator").hidden = true; document.body.style.overflow = ""; };
