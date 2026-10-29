@@ -82,8 +82,9 @@
 
   <section class="app-shell" id="creator" hidden>
     <header class="app-head"><a class="brand" href="#top"><span class="brand-mark">Q</span><span>QR Forever</span></a><div><span id="userEmail"></span><button class="link-button" id="logout">ออกจากระบบ</button></div></header>
-    <div class="creator-intro"><div><span class="preview-kicker">QR STUDIO</span><h1>สร้างสรรค์ QR ของคุณ</h1><p>ปรับแต่งแบบเรียลไทม์ แล้วดาวน์โหลดพร้อมใช้งานได้ทันที</p></div><div class="status-pill"><i></i> ระบบพร้อมใช้งาน</div></div>
-    <div class="creator-grid">
+    <div class="creator-intro"><div><span class="preview-kicker">QR & LINK STUDIO</span><h1>เครื่องมือดิจิทัลของคุณ</h1><p>สร้าง QR Code และลิงก์สั้นพร้อมใช้งานได้ทันที</p></div><div class="status-pill"><i></i> ระบบพร้อมใช้งาน</div></div>
+    <div class="tool-switch" role="tablist" aria-label="เลือกเครื่องมือ"><button type="button" class="active" id="qrToolTab">สร้าง QR Code</button><button type="button" id="shortToolTab">สร้าง Short URL</button></div>
+    <div class="creator-grid" id="qrTool">
       <div class="panel controls">
         <div class="panel-title"><span>01</span><div><h2>สร้าง QR Code</h2><p>กำหนดข้อมูลและรูปแบบของคุณ</p></div></div>
         <label>ข้อมูลใน QR<textarea id="qrText" rows="4" placeholder="https://example.com">https://example.com</textarea></label>
@@ -96,6 +97,22 @@
       <div class="panel preview-panel">
         <span class="preview-kicker">ตัวอย่างแบบเรียลไทม์</span><div class="qr-output" id="qrOutput"></div><p>ทดสอบสแกนก่อนนำไปใช้งานจริง</p>
         <button class="secondary" id="downloadPng">ดาวน์โหลด PNG</button>
+      </div>
+    </div>
+    <div class="short-tool" id="shortTool" hidden>
+      <div class="panel short-panel">
+        <div class="panel-title"><span>↗</span><div><h2>สร้าง Short URL</h2><p>ย่อลิงก์ยาวให้สั้น จำง่าย และแชร์สะดวก</p></div></div>
+        <div class="short-form">
+          <label>ลิงก์ปลายทาง<input id="shortDestination" type="url" inputmode="url" placeholder="https://example.com/หน้าที่ต้องการแชร์"></label>
+          <label>กำหนดรหัสเอง <span class="field-hint">ไม่บังคับ · 4–24 ตัว ใช้ a-z, 0-9 และ -</span><div class="alias-input"><span>?s=</span><input id="shortAlias" type="text" maxlength="24" autocomplete="off" placeholder="my-link"></div></label>
+          <button class="primary wide" id="createShort">สร้างลิงก์สั้น</button>
+          <p class="form-status" id="shortStatus" role="status"></p>
+        </div>
+        <div class="short-result" id="shortResult" hidden>
+          <span>ลิงก์สั้นของคุณพร้อมแล้ว</span>
+          <div><input id="shortUrl" type="text" readonly><button class="secondary" id="copyShort">คัดลอก</button></div>
+          <a id="testShort" target="_blank" rel="noopener">ทดลองเปิดลิงก์ ↗</a>
+        </div>
       </div>
     </div>
   </section>

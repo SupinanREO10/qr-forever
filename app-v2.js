@@ -32,6 +32,8 @@ async function demoApi(action, data) {
     return { ok: true, token: "demo-token", email: data.email, fullName: "ผู้ใช้งานตัวอย่าง" };
   }
   if (action === "saveQr") return { ok: true, id: crypto.randomUUID() };
+  if (action === "createShort") return { ok: true, code: data.alias || "demo123" };
+  if (action === "resolveShort") return { ok: true, destination: "https://example.com" };
   return { ok: true };
 }
 function showStatus(element, message, isError = false) { element.textContent = message; element.style.color = isError ? "#b43c30" : "#42645d"; }
@@ -63,7 +65,33 @@ async function saveQr() {
   try { await api("saveQr", { token: localStorage.getItem("qrf_token"), name: $("#qrName").value.trim() || "ไม่มีชื่อ", content: $("#qrText").value, darkColor: $("#darkColor").value, lightColor: $("#lightColor").value, hasLogo: Boolean(logoImage) }); showStatus(status, config.DEMO_MODE ? "บันทึกตัวอย่างแล้ว — ตั้งค่า Apps Script เพื่อบันทึกลง Drive" : "บันทึกลง Google Drive แล้ว"); }
   catch (error) { showStatus(status, error.message, true); }
 }
+function shortBaseUrl() { return (config.SHORT_BASE_URL || (location.origin + location.pathname)).replace(/\/?$/, "/"); }
+function setActiveTool(tool) {
+  const isQr = tool === "qr";
+  $("#qrToolTab").classList.toggle("active", isQr); $("#shortToolTab").classList.toggle("active", !isQr);
+  $("#qrTool").hidden = !isQr; $("#shortTool").hidden = isQr;
+}
+async function createShortUrl() {
+  const status = $("#shortStatus"), destination = $("#shortDestination").value.trim(), alias = $("#shortAlias").value.trim().toLowerCase();
+  $("#shortResult").hidden = true;
+  if (!/^https?:\/\//i.test(destination)) return showStatus(status, "กรุณาใส่ลิงก์ที่ขึ้นต้นด้วย http:// หรือ https://", true);
+  if (alias && !/^[a-z0-9-]{4,24}$/.test(alias)) return showStatus(status, "รหัสต้องมี 4–24 ตัว และใช้เฉพาะ a-z, 0-9 หรือ -", true);
+  showStatus(status, "กำลังสร้างลิงก์สั้น…");
+  try {
+    const result = await api("createShort", { token: localStorage.getItem("qrf_token"), destination, alias });
+    const url = shortBaseUrl() + encodeURIComponent(result.code);
+    $("#shortUrl").value = url; $("#testShort").href = url; $("#shortResult").hidden = false;
+    showStatus(status, "สร้างลิงก์สั้นเรียบร้อยแล้ว");
+  } catch (error) { showStatus(status, error.message, true); }
+}
+async function resolveIncomingShortLink(code) {
+  document.body.innerHTML = '<main class="redirect-page"><span class="brand-mark">Q</span><h1>กำลังเปิดลิงก์…</h1><p id="redirectStatus">QR Forever กำลังพาคุณไปยังปลายทาง</p></main>';
+  try { const result = await api("resolveShort", { code }); location.replace(result.destination); }
+  catch (error) { $("#redirectStatus").textContent = error.message || "ไม่พบลิงก์นี้"; }
+}
 document.addEventListener("DOMContentLoaded", () => {
+  const pathCode = location.hostname.endsWith(".web.app") ? location.pathname.split("/").filter(Boolean)[0] : "";
+  const incomingCode = new URLSearchParams(location.search).get("s") || pathCode; if (incomingCode) return resolveIncomingShortLink(incomingCode);
   $$('[data-open-auth]').forEach((button) => button.onclick = () => { if (localStorage.getItem("qrf_token")) return openCreator(); setAuthMode("register"); $("#authDialog").showModal(); });
   $("[data-close]").onclick = () => $("#authDialog").close(); $("#registerTab").onclick = () => setAuthMode("register"); $("#loginTab").onclick = () => setAuthMode("login");
   $("#emailForm").onsubmit = async (event) => {
@@ -90,6 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   $("#downloadPng").onclick = () => { drawLogo(); const anchor = document.createElement("a"); anchor.download = ($("#qrName").value.trim() || "qr-forever") + ".png"; anchor.href = $("#qrOutput canvas").toDataURL("image/png"); anchor.click(); };
   $("#saveQr").onclick = saveQr;
+  $("#qrToolTab").onclick = () => setActiveTool("qr"); $("#shortToolTab").onclick = () => setActiveTool("short");
+  $("#createShort").onclick = createShortUrl;
+  $("#copyShort").onclick = async () => { try { await navigator.clipboard.writeText($("#shortUrl").value); $("#copyShort").textContent = "คัดลอกแล้ว"; setTimeout(() => $("#copyShort").textContent = "คัดลอก", 1600); } catch { $("#shortUrl").select(); document.execCommand("copy"); } };
   $("#logout").onclick = () => { ["qrf_token", "qrf_email", "qrf_name"].forEach((key) => localStorage.removeItem(key)); $("#creator").hidden = true; document.body.style.overflow = ""; };
   qrReady.then(() => makeQr($("#heroQr"), location.origin, 210)).catch(() => { $("#heroQr").innerHTML = '<span class="qr-fallback">QR</span>'; });
 });
