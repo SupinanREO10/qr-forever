@@ -1,5 +1,4 @@
 window.QR_FOREVER_CONFIG = {
-  // วาง URL ของ Google Apps Script Web App หลัง Deploy แล้ว
-  API_URL: "",
-  DEMO_MODE: true
+  API_URL: "https://script.google.com/macros/s/AKfycbz2zq6nKbn3pmNkRGAL0gRTwgGniCTNgGXhmWWYL05tf1Lhl4mvRsLtlu65q1v5cpvf/exec",
+  DEMO_MODE: false
 };
