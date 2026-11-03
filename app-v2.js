@@ -2,6 +2,7 @@ const config = window.QR_FOREVER_CONFIG || {};
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 let pendingEmail = "", authMode = "register", logoImage = null;
+const QR_QUIET_ZONE = 20;
 
 function ensureQrLibrary() {
   if (window.QRCode) return Promise.resolve();
@@ -17,7 +18,19 @@ const qrReady = ensureQrLibrary();
 
 function makeQr(target, text, size = 260, dark = "#173d37", light = "#ffffff") {
   target.innerHTML = "";
-  return new window.QRCode(target, { text: text || "https://example.com", width: size, height: size, colorDark: dark, colorLight: light, correctLevel: window.QRCode.CorrectLevel.H });
+  const qr = new window.QRCode(target, { text: text || "https://example.com", width: size, height: size, colorDark: dark, colorLight: light, correctLevel: window.QRCode.CorrectLevel.H });
+  const source = target.querySelector("canvas");
+  if (source) {
+    const padded = document.createElement("canvas"), total = size + QR_QUIET_ZONE * 2;
+    padded.width = total; padded.height = total;
+    const ctx = padded.getContext("2d");
+    ctx.fillStyle = light; ctx.fillRect(0, 0, total, total);
+    ctx.drawImage(source, QR_QUIET_ZONE, QR_QUIET_ZONE, size, size);
+    source.replaceWith(padded);
+    const visibleImage = target.querySelector("img");
+    if (visibleImage) visibleImage.src = padded.toDataURL("image/png");
+  }
+  return qr;
 }
 function api(action, data = {}) {
   if (config.DEMO_MODE || !config.API_URL) return demoApi(action, data);
@@ -50,7 +63,7 @@ function setAuthMode(mode) {
 }
 function drawLogo() {
   const canvas = $("#qrOutput canvas"); if (!canvas || !logoImage) return;
-  const ctx = canvas.getContext("2d"), ratio = Number($("#logoSize").value) / 100, width = canvas.width * ratio, x = (canvas.width - width) / 2, pad = width * .14;
+  const ctx = canvas.getContext("2d"), ratio = Math.min(Number($("#logoSize").value), 18) / 100, width = canvas.width * ratio, x = (canvas.width - width) / 2, pad = width * .1;
   ctx.fillStyle = $("#lightColor").value; ctx.beginPath(); ctx.roundRect(x - pad, x - pad, width + pad * 2, width + pad * 2, pad * .7); ctx.fill(); ctx.drawImage(logoImage, x, x, width, width);
   const visibleImage = $("#qrOutput img");
   if (visibleImage) visibleImage.src = canvas.toDataURL("image/png");
