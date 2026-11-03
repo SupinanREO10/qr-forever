@@ -50,6 +50,18 @@ async function demoApi(action, data) {
   return { ok: true };
 }
 function showStatus(element, message, isError = false) { element.textContent = message; element.style.color = isError ? "#b43c30" : "#42645d"; }
+function requestFreshLogin(error, statusElement) {
+  const message = error?.message || "";
+  if (!/เซสชันหมดอายุ|กรุณาเข้าสู่ระบบ/.test(message)) return false;
+  localStorage.removeItem("qrf_token");
+  pendingEmail = localStorage.getItem("qrf_email") || "";
+  setAuthMode("login");
+  $("#email").value = pendingEmail;
+  showStatus($("#authStatus"), "เซสชันหมดอายุ กรุณารับรหัส OTP เพื่อเข้าสู่ระบบใหม่", true);
+  if (!$("#authDialog").open) $("#authDialog").showModal();
+  if (statusElement) showStatus(statusElement, "กรุณาเข้าสู่ระบบใหม่ แล้วลองอีกครั้ง", true);
+  return true;
+}
 function setAuthMode(mode) {
   authMode = mode;
   const registering = mode === "register";
@@ -74,7 +86,7 @@ function openCreator() { $("#userEmail").textContent = localStorage.getItem("qrf
 async function saveQr() {
   const status = $("#saveStatus"); showStatus(status, "กำลังบันทึก…");
   try { await api("saveQr", { token: localStorage.getItem("qrf_token"), name: $("#qrName").value.trim() || "ไม่มีชื่อ", content: $("#qrText").value, darkColor: $("#darkColor").value, lightColor: $("#lightColor").value, hasLogo: Boolean(logoImage) }); showStatus(status, config.DEMO_MODE ? "บันทึกตัวอย่างแล้ว — ตั้งค่า Apps Script เพื่อบันทึกลง Drive" : "บันทึกลง Google Drive แล้ว"); }
-  catch (error) { showStatus(status, error.message, true); }
+  catch (error) { if (!requestFreshLogin(error, status)) showStatus(status, error.message, true); }
 }
 function shortBaseUrl() { return (config.SHORT_BASE_URL || (location.origin + location.pathname)).replace(/\/?$/, "/"); }
 function setActiveTool(tool) {
@@ -93,7 +105,7 @@ async function createShortUrl() {
     const url = shortBaseUrl() + encodeURIComponent(result.code);
     $("#shortUrl").value = url; $("#testShort").href = url; $("#shortResult").hidden = false;
     showStatus(status, "สร้างลิงก์สั้นเรียบร้อยแล้ว");
-  } catch (error) { showStatus(status, error.message, true); }
+  } catch (error) { if (!requestFreshLogin(error, status)) showStatus(status, error.message, true); }
 }
 async function resolveIncomingShortLink(code) {
   document.body.innerHTML = '<main class="redirect-page"><span class="brand-mark">Q</span><h1>กำลังเปิดลิงก์…</h1><p id="redirectStatus">QR Forever กำลังพาคุณไปยังปลายทาง</p></main>';
