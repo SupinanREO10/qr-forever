@@ -26,9 +26,9 @@ function makeQr(target, text, size = 260, dark = "#173d37", light = "#ffffff") {
     const ctx = padded.getContext("2d");
     ctx.fillStyle = light; ctx.fillRect(0, 0, total, total);
     ctx.drawImage(source, QR_QUIET_ZONE, QR_QUIET_ZONE, size, size);
+    padded.style.display = "block";
     source.replaceWith(padded);
-    const visibleImage = target.querySelector("img");
-    if (visibleImage) visibleImage.src = padded.toDataURL("image/png");
+    target.querySelectorAll("img").forEach((image) => image.remove());
   }
   return qr;
 }
@@ -65,8 +65,6 @@ function drawLogo() {
   const canvas = $("#qrOutput canvas"); if (!canvas || !logoImage) return;
   const ctx = canvas.getContext("2d"), ratio = Math.min(Number($("#logoSize").value), 18) / 100, width = canvas.width * ratio, x = (canvas.width - width) / 2, pad = width * .1;
   ctx.fillStyle = $("#lightColor").value; ctx.beginPath(); ctx.roundRect(x - pad, x - pad, width + pad * 2, width + pad * 2, pad * .7); ctx.fill(); ctx.drawImage(logoImage, x, x, width, width);
-  const visibleImage = $("#qrOutput img");
-  if (visibleImage) visibleImage.src = canvas.toDataURL("image/png");
 }
 async function refreshQr() {
   try { await qrReady; makeQr($("#qrOutput"), $("#qrText").value, 260, $("#darkColor").value, $("#lightColor").value); setTimeout(drawLogo, 40); }
